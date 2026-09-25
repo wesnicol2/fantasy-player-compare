@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pip install -q -r requirements.txt && pip install -q -e '.[dev]' && echo 'Ready. After Python edits: bash scripts/fix. Before every push: bash scripts/verify. CI runs the same verification gate.'",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}
