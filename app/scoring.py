@@ -44,4 +44,6 @@ def scoring_rules(name: str) -> dict[str, float]:
         return dict(SCORING_PRESETS[name])
     except KeyError as exc:
         supported = ", ".join(SCORING_PRESETS)
-        raise ValueError(f"unsupported scoring preset {name!r}; expected one of {supported}") from exc
+        raise ValueError(
+            f"unsupported scoring preset {name!r}; expected one of {supported}"
+        ) from exc
