@@ -126,9 +126,7 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
           role="listbox"
           aria-label={`${label} results`}
         >
-          {loading ? (
-            <div className="search-status">Searching…</div>
-          ) : null}
+          {loading ? <div className="search-status">Searching…</div> : null}
           {!loading && results.length === 0 ? (
             <div className="search-status">No matching current players</div>
           ) : null}

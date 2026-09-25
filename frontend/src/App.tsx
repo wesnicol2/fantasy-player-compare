@@ -2,11 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { comparePlayers } from './api/client';
 import { ComparisonView } from './components/ComparisonView';
 import { PlayerSearch } from './components/PlayerSearch';
-import type {
-  ComparisonResponse,
-  PlayerOption,
-  ScoringPreset,
-} from './types';
+import type { ComparisonResponse, PlayerOption, ScoringPreset } from './types';
 
 const SCORING: Array<{ value: ScoringPreset; label: string }> = [
   { value: 'standard', label: 'Standard' },

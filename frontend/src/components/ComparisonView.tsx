@@ -49,9 +49,7 @@ function fmtKickoff(value: string | null | undefined) {
 function crossYardageRoles(left: string, right: string) {
   const back = (position: string) => position === 'RB';
   const catcher = (position: string) => position === 'WR' || position === 'TE';
-  return (
-    (back(left) && catcher(right)) || (back(right) && catcher(left))
-  );
+  return (back(left) && catcher(right)) || (back(right) && catcher(left));
 }
 
 interface Measure {
@@ -332,9 +330,7 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
                           leftMeasure.points > rightMeasure.points,
                       )}
                     >
-                      {leftMeasure
-                        ? fmtSigned(leftMeasure.points, ' FP')
-                        : '—'}
+                      {leftMeasure ? fmtSigned(leftMeasure.points, ' FP') : '—'}
                     </Cell>
                     <Cell
                       edge={Boolean(
