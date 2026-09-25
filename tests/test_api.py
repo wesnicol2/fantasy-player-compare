@@ -56,3 +56,15 @@ def test_player_search_upstream_failure_is_controlled_503(monkeypatch):
     status, _, body = request("/api/players", "q=alpha")
     assert status == "503 Service Unavailable"
     assert json.loads(body)["error"] == "player directory is temporarily unavailable"
+
+
+def test_compare_url_serves_spa_fallback(monkeypatch, tmp_path):
+    index = tmp_path / "index.html"
+    index.write_text("<!doctype html><title>Fantasy Player Compare</title>", encoding="utf-8")
+    monkeypatch.setattr(api, "UI_ROOT", tmp_path)
+
+    status, headers, body = request("/compare/1-vs-2/alpha-vs-beta")
+
+    assert status == "200 OK"
+    assert headers["Content-Type"].startswith("text/html")
+    assert b"Fantasy Player Compare" in body

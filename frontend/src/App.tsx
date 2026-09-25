@@ -2,6 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { comparePlayers } from './api/client';
 import { ComparisonView } from './components/ComparisonView';
 import { PlayerSearch } from './components/PlayerSearch';
+import {
+  comparisonUrl,
+  parseSharedPath,
+  scoringFromSearch,
+} from './comparisonUrl';
 import type { ComparisonResponse, PlayerOption, ScoringPreset } from './types';
 
 const SCORING: Array<{ value: ScoringPreset; label: string }> = [
@@ -10,40 +15,16 @@ const SCORING: Array<{ value: ScoringPreset; label: string }> = [
   { value: 'ppr', label: 'PPR' },
 ];
 
-function slug(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-function parseSharedPath(): { left: string; right: string } | null {
-  const match = window.location.pathname.match(
-    /^\/compare\/([^/]+)-vs-([^/]+)(?:\/|$)/,
-  );
-  return match ? { left: match[1], right: match[2] } : null;
-}
-
-function scoringFromUrl(): ScoringPreset {
-  const value = new URLSearchParams(window.location.search).get('scoring');
-  return value === 'standard' || value === 'ppr' || value === 'half_ppr'
-    ? value
-    : 'half_ppr';
-}
-
-function comparisonUrl(
-  left: PlayerOption,
-  right: PlayerOption,
-  scoring: ScoringPreset,
-) {
-  return `/compare/${left.id}-vs-${right.id}/${slug(left.name)}-vs-${slug(right.name)}?scoring=${scoring}`;
-}
-
 export function App() {
-  const shared = useMemo(parseSharedPath, []);
+  const shared = useMemo(
+    () => parseSharedPath(window.location.pathname),
+    [],
+  );
   const [left, setLeft] = useState<PlayerOption | null>(null);
   const [right, setRight] = useState<PlayerOption | null>(null);
-  const [scoring, setScoring] = useState<ScoringPreset>(scoringFromUrl);
+  const [scoring, setScoring] = useState<ScoringPreset>(() =>
+    scoringFromSearch(window.location.search),
+  );
   const [data, setData] = useState<ComparisonResponse | null>(null);
   const [sharedIds, setSharedIds] = useState(shared);
   const [loading, setLoading] = useState(Boolean(shared));
