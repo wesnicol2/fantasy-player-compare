@@ -30,4 +30,4 @@ jobs:
           node-version: "22"
 
       - name: Verify repository
-        run: ./scripts/verify
+        run: bash scripts/verify
