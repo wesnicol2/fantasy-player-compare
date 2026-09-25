@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
-import type { ComparisonResponse, MarketDetail, PlayerComparisonSide } from '../types';
+import type {
+  ComparisonResponse,
+  MarketDetail,
+  PlayerComparisonSide,
+} from '../types';
 import { DistributionChart } from './DistributionChart';
 import { RangeThermometer } from './RangeThermometer';
 
@@ -45,7 +49,9 @@ function fmtKickoff(value: string | null | undefined) {
 function crossYardageRoles(left: string, right: string) {
   const back = (position: string) => position === 'RB';
   const catcher = (position: string) => position === 'WR' || position === 'TE';
-  return (back(left) && catcher(right)) || (back(right) && catcher(left));
+  return (
+    (back(left) && catcher(right)) || (back(right) && catcher(left))
+  );
 }
 
 interface Measure {
@@ -90,10 +96,10 @@ function ProjectionHeader({ side }: { side: PlayerComparisonSide }) {
   return (
     <div className="player-heading">
       <strong>{side.player.name}</strong>
-      <span>
+      <span className="player-heading-meta">
         {side.player.position} · {side.player.team}
       </span>
-      <span>
+      <span className="player-heading-meta player-heading-matchup">
         {matchup
           ? `${matchup.venue === 'home' ? 'vs' : '@'} ${matchup.opponent}`
           : 'Matchup unavailable'}
@@ -118,31 +124,52 @@ function CoverageNotice({ side }: { side: PlayerComparisonSide }) {
 
 export function ComparisonView({ data }: { data: ComparisonResponse }) {
   const { left, right } = data;
-  const mergeYardage = crossYardageRoles(left.player.position, right.player.position);
+  const mergeYardage = crossYardageRoles(
+    left.player.position,
+    right.player.position,
+  );
   const keys = useMemo(() => {
-    const union = new Set([...Object.keys(left.markets), ...Object.keys(right.markets)]);
+    const union = new Set([
+      ...Object.keys(left.markets),
+      ...Object.keys(right.markets),
+    ]);
     let result = [...union];
     if (mergeYardage && result.some((key) => YARDAGE.has(key))) {
-      result = ['rush_reception_yds', ...result.filter((key) => !YARDAGE.has(key))];
+      result = [
+        'rush_reception_yds',
+        ...result.filter((key) => !YARDAGE.has(key)),
+      ];
     }
     const impact = (key: string) =>
-      Math.max(Math.abs(measure(left, key)?.points ?? 0), Math.abs(measure(right, key)?.points ?? 0));
+      Math.max(
+        Math.abs(measure(left, key)?.points ?? 0),
+        Math.abs(measure(right, key)?.points ?? 0),
+      );
     return result.sort((a, b) => impact(b) - impact(a));
   }, [left, mergeYardage, right]);
 
-  const drillable = keys.filter((key) => left.markets[key]?.graph && right.markets[key]?.graph);
+  const drillable = keys.filter(
+    (key) => left.markets[key]?.graph && right.markets[key]?.graph,
+  );
   const [metric, setMetric] = useState<string | null>(drillable[0] ?? null);
-  const activeMetric = metric && drillable.includes(metric) ? metric : drillable[0] ?? null;
+  const activeMetric =
+    metric && drillable.includes(metric) ? metric : (drillable[0] ?? null);
   const lp = left.projection;
   const rp = right.projection;
   const medianDelta = lp && rp ? lp.mid - rp.mid : null;
-  const evidenceDates = [left.evidence.as_of, right.evidence.as_of].filter(Boolean) as string[];
+  const evidenceDates = [left.evidence.as_of, right.evidence.as_of].filter(
+    Boolean,
+  ) as string[];
   const oldestEvidence = evidenceDates.length
-    ? new Date(Math.min(...evidenceDates.map((value) => new Date(value).getTime())))
+    ? new Date(
+        Math.min(...evidenceDates.map((value) => new Date(value).getTime())),
+      )
     : null;
   const stale = left.evidence.stale || right.evidence.stale;
 
-  const projectionRows: Array<[string, number | undefined, number | undefined]> = [
+  const projectionRows: Array<
+    [string, number | undefined, number | undefined]
+  > = [
     ['Floor', lp?.floor, rp?.floor],
     ['Median', lp?.mid, rp?.mid],
     ['Ceiling', lp?.ceiling, rp?.ceiling],
@@ -153,7 +180,9 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
     <section className="comparison" aria-live="polite">
       <header className="comparison-summary">
         <div>
-          <p className="eyebrow">This week · {data.scoring.replace('_', ' ')}</p>
+          <p className="eyebrow">
+            This week · {data.scoring.replace('_', ' ')}
+          </p>
           <h2>
             {medianDelta == null
               ? 'Projection incomplete'
@@ -164,11 +193,14 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
         </div>
         <div className={stale ? 'freshness stale' : 'freshness'}>
           {oldestEvidence
-            ? `${stale ? 'Cached evidence' : 'Evidence'} ${oldestEvidence.toLocaleString([], {
-                weekday: 'short',
-                hour: 'numeric',
-                minute: '2-digit',
-              })}`
+            ? `${stale ? 'Cached evidence' : 'Evidence'} ${oldestEvidence.toLocaleString(
+                [],
+                {
+                  weekday: 'short',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                },
+              )}`
             : 'Evidence time unavailable'}
         </div>
       </header>
@@ -185,19 +217,35 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
             <thead>
               <tr>
                 <th scope="col">Signal</th>
-                <th scope="col"><ProjectionHeader side={left} /></th>
-                <th scope="col"><ProjectionHeader side={right} /></th>
+                <th scope="col">
+                  <ProjectionHeader side={left} />
+                </th>
+                <th scope="col">
+                  <ProjectionHeader side={right} />
+                </th>
               </tr>
             </thead>
             <tbody>
-              {projectionRows.map(([label, l, r]) => (
+              {projectionRows.map(([label, leftValue, rightValue]) => (
                 <tr key={label}>
                   <th scope="row">{label}</th>
-                  <Cell edge={l != null && r != null && l > r}>
-                    {l == null ? '—' : `${fmt(l)} FP`}
+                  <Cell
+                    edge={
+                      leftValue != null &&
+                      rightValue != null &&
+                      leftValue > rightValue
+                    }
+                  >
+                    {leftValue == null ? '—' : `${fmt(leftValue)} FP`}
                   </Cell>
-                  <Cell edge={l != null && r != null && r > l}>
-                    {r == null ? '—' : `${fmt(r)} FP`}
+                  <Cell
+                    edge={
+                      leftValue != null &&
+                      rightValue != null &&
+                      rightValue > leftValue
+                    }
+                  >
+                    {rightValue == null ? '—' : `${fmt(rightValue)} FP`}
                   </Cell>
                 </tr>
               ))}
@@ -220,13 +268,29 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
             <tbody>
               <tr>
                 <th scope="row">Team implied total</th>
-                <td>{left.matchup?.team_implied_total == null ? '—' : `${fmt(left.matchup.team_implied_total)} pts`}</td>
-                <td>{right.matchup?.team_implied_total == null ? '—' : `${fmt(right.matchup.team_implied_total)} pts`}</td>
+                <td>
+                  {left.matchup?.team_implied_total == null
+                    ? '—'
+                    : `${fmt(left.matchup.team_implied_total)} pts`}
+                </td>
+                <td>
+                  {right.matchup?.team_implied_total == null
+                    ? '—'
+                    : `${fmt(right.matchup.team_implied_total)} pts`}
+                </td>
               </tr>
               <tr>
                 <th scope="row">Game total</th>
-                <td>{left.matchup?.game_total == null ? '—' : `${fmt(left.matchup.game_total)} pts`}</td>
-                <td>{right.matchup?.game_total == null ? '—' : `${fmt(right.matchup.game_total)} pts`}</td>
+                <td>
+                  {left.matchup?.game_total == null
+                    ? '—'
+                    : `${fmt(left.matchup.game_total)} pts`}
+                </td>
+                <td>
+                  {right.matchup?.game_total == null
+                    ? '—'
+                    : `${fmt(right.matchup.game_total)} pts`}
+                </td>
               </tr>
               <tr>
                 <th scope="row">Team spread</th>
@@ -256,16 +320,32 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
             </thead>
             <tbody>
               {keys.map((key) => {
-                const l = measure(left, key);
-                const r = measure(right, key);
+                const leftMeasure = measure(left, key);
+                const rightMeasure = measure(right, key);
                 return (
                   <tr key={key}>
                     <th scope="row">{marketLabel(key)}</th>
-                    <Cell edge={Boolean(l && r && l.points > r.points)}>
-                      {l ? fmtSigned(l.points, ' FP') : '—'}
+                    <Cell
+                      edge={Boolean(
+                        leftMeasure &&
+                          rightMeasure &&
+                          leftMeasure.points > rightMeasure.points,
+                      )}
+                    >
+                      {leftMeasure
+                        ? fmtSigned(leftMeasure.points, ' FP')
+                        : '—'}
                     </Cell>
-                    <Cell edge={Boolean(l && r && r.points > l.points)}>
-                      {r ? fmtSigned(r.points, ' FP') : '—'}
+                    <Cell
+                      edge={Boolean(
+                        leftMeasure &&
+                          rightMeasure &&
+                          rightMeasure.points > leftMeasure.points,
+                      )}
+                    >
+                      {rightMeasure
+                        ? fmtSigned(rightMeasure.points, ' FP')
+                        : '—'}
                     </Cell>
                   </tr>
                 );
@@ -288,18 +368,27 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
             </thead>
             <tbody>
               {keys.map((key) => {
-                const l = measure(left, key);
-                const r = measure(right, key);
-                const max = Math.max(l?.range[2] ?? 0, r?.range[2] ?? 0, 1);
+                const leftMeasure = measure(left, key);
+                const rightMeasure = measure(right, key);
+                const max = Math.max(
+                  leftMeasure?.range[2] ?? 0,
+                  rightMeasure?.range[2] ?? 0,
+                  1,
+                );
                 const clickable =
-                  key !== 'rush_reception_yds' && Boolean(left.markets[key] && right.markets[key]);
+                  key !== 'rush_reception_yds' &&
+                  Boolean(left.markets[key] && right.markets[key]);
                 return (
                   <tr key={key}>
                     <th scope="row">
                       {clickable ? (
                         <button
                           type="button"
-                          className={activeMetric === key ? 'metric-button active' : 'metric-button'}
+                          className={
+                            activeMetric === key
+                              ? 'metric-button active'
+                              : 'metric-button'
+                          }
                           onClick={() => setMetric(key)}
                         >
                           {marketLabel(key)}
@@ -309,12 +398,22 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
                       )}
                     </th>
                     <td>
-                      <span className="stat-mean">{l ? fmt(l.statMean) : '—'}</span>
-                      <RangeThermometer range={l?.range ?? null} max={max} />
+                      <span className="stat-mean">
+                        {leftMeasure ? fmt(leftMeasure.statMean) : '—'}
+                      </span>
+                      <RangeThermometer
+                        range={leftMeasure?.range ?? null}
+                        max={max}
+                      />
                     </td>
                     <td>
-                      <span className="stat-mean">{r ? fmt(r.statMean) : '—'}</span>
-                      <RangeThermometer range={r?.range ?? null} max={max} />
+                      <span className="stat-mean">
+                        {rightMeasure ? fmt(rightMeasure.statMean) : '—'}
+                      </span>
+                      <RangeThermometer
+                        range={rightMeasure?.range ?? null}
+                        max={max}
+                      />
                     </td>
                   </tr>
                 );
@@ -331,7 +430,9 @@ export function ComparisonView({ data }: { data: ComparisonResponse }) {
               <p className="eyebrow">Distribution</p>
               <h3>{marketLabel(activeMetric)}</h3>
             </div>
-            <span>Click another stat above to change the chart.</span>
+            <span className="section-hint">
+              Click another stat above to change the chart.
+            </span>
           </div>
           <DistributionChart
             label={marketLabel(activeMetric)}

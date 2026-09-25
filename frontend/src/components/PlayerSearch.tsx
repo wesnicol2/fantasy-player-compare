@@ -46,7 +46,8 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
           setActiveIndex(filtered.length ? 0 : -1);
         })
         .catch((error: unknown) => {
-          if (error instanceof DOMException && error.name === 'AbortError') return;
+          if (error instanceof DOMException && error.name === 'AbortError')
+            return;
           setResults([]);
           setOpen(true);
         })
@@ -76,7 +77,9 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
           aria-autocomplete="list"
           aria-controls={listId}
           aria-expanded={open}
-          aria-activedescendant={activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined}
+          aria-activedescendant={
+            activeIndex >= 0 ? `${listId}-${activeIndex}` : undefined
+          }
           onFocus={() => {
             if (results.length) setOpen(true);
           }}
@@ -88,7 +91,9 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
             if (!open || results.length === 0) return;
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              setActiveIndex((index) => Math.min(results.length - 1, index + 1));
+              setActiveIndex((index) =>
+                Math.min(results.length - 1, index + 1),
+              );
             } else if (event.key === 'ArrowUp') {
               event.preventDefault();
               setActiveIndex((index) => Math.max(0, index - 1));
@@ -115,8 +120,15 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
         ) : null}
       </div>
       {open ? (
-        <div className="search-results" id={listId} role="listbox" aria-label={`${label} results`}>
-          {loading ? <div className="search-status">Searching…</div> : null}
+        <div
+          className="search-results"
+          id={listId}
+          role="listbox"
+          aria-label={`${label} results`}
+        >
+          {loading ? (
+            <div className="search-status">Searching…</div>
+          ) : null}
           {!loading && results.length === 0 ? (
             <div className="search-status">No matching current players</div>
           ) : null}
@@ -132,7 +144,7 @@ export function PlayerSearch({ label, selected, excludeId, onSelect }: Props) {
               onClick={() => choose(player)}
             >
               <strong>{player.name}</strong>
-              <span>
+              <span className="player-meta">
                 {player.position} · {player.team}
               </span>
             </button>

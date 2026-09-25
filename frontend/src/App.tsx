@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { comparePlayers } from './api/client';
 import { ComparisonView } from './components/ComparisonView';
 import { PlayerSearch } from './components/PlayerSearch';
-import type { ComparisonResponse, PlayerOption, ScoringPreset } from './types';
+import type {
+  ComparisonResponse,
+  PlayerOption,
+  ScoringPreset,
+} from './types';
 
 const SCORING: Array<{ value: ScoringPreset; label: string }> = [
   { value: 'standard', label: 'Standard' },
@@ -11,20 +15,31 @@ const SCORING: Array<{ value: ScoringPreset; label: string }> = [
 ];
 
 function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 function parseSharedPath(): { left: string; right: string } | null {
-  const match = window.location.pathname.match(/^\/compare\/([^/]+)-vs-([^/]+)(?:\/|$)/);
+  const match = window.location.pathname.match(
+    /^\/compare\/([^/]+)-vs-([^/]+)(?:\/|$)/,
+  );
   return match ? { left: match[1], right: match[2] } : null;
 }
 
 function scoringFromUrl(): ScoringPreset {
   const value = new URLSearchParams(window.location.search).get('scoring');
-  return value === 'standard' || value === 'ppr' || value === 'half_ppr' ? value : 'half_ppr';
+  return value === 'standard' || value === 'ppr' || value === 'half_ppr'
+    ? value
+    : 'half_ppr';
 }
 
-function comparisonUrl(left: PlayerOption, right: PlayerOption, scoring: ScoringPreset) {
+function comparisonUrl(
+  left: PlayerOption,
+  right: PlayerOption,
+  scoring: ScoringPreset,
+) {
   return `/compare/${left.id}-vs-${right.id}/${slug(left.name)}-vs-${slug(right.name)}?scoring=${scoring}`;
 }
 
@@ -63,8 +78,11 @@ export function App() {
         document.title = `${response.left.player.name} vs ${response.right.player.name} | Fantasy Player Compare`;
       })
       .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === 'AbortError') return;
-        setError(reason instanceof Error ? reason.message : 'Comparison unavailable');
+        if (reason instanceof DOMException && reason.name === 'AbortError')
+          return;
+        setError(
+          reason instanceof Error ? reason.message : 'Comparison unavailable',
+        );
       })
       .finally(() => setLoading(false));
     return () => controller.abort();
@@ -96,20 +114,25 @@ export function App() {
   return (
     <main>
       <header className="site-header">
-        <a href="/" className="brand">Fantasy Player Compare</a>
-        <span>Vegas-derived weekly evidence</span>
+        <a href="/" className="brand">
+          Fantasy Player Compare
+        </a>
+        <span className="site-tagline">Vegas-derived weekly evidence</span>
       </header>
 
       <section className="hero">
         <p className="eyebrow">No rankings. No account. This week only.</p>
         <h1>Which player does the betting market like?</h1>
         <p>
-          Pick two players. Compare their fantasy range, game environment, and the props driving
-          the projection.
+          Pick two players. Compare their fantasy range, game environment, and
+          the props driving the projection.
         </p>
       </section>
 
-      <section className="compare-controls" aria-label="Choose players and scoring">
+      <section
+        className="compare-controls"
+        aria-label="Choose players and scoring"
+      >
         <PlayerSearch
           label="Player A"
           selected={left}
@@ -156,7 +179,9 @@ export function App() {
         </section>
       ) : null}
       {loading ? (
-        <section className="loading-state" aria-live="polite">Loading market evidence…</section>
+        <section className="loading-state" aria-live="polite">
+          Loading market evidence…
+        </section>
       ) : null}
       {error ? (
         <section className="error-state" role="alert">
@@ -166,7 +191,10 @@ export function App() {
       ) : null}
       {!loading && !error && data ? <ComparisonView data={data} /> : null}
 
-      <footer>Projections are derived from sportsbook markets and are estimates, not guarantees.</footer>
+      <footer>
+        Projections are derived from sportsbook markets and are estimates, not
+        guarantees.
+      </footer>
     </main>
   );
 }

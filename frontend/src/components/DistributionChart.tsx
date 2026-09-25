@@ -10,24 +10,40 @@ interface Props {
   right: MarketDetail | null;
 }
 
-export function DistributionChart({ label, leftName, rightName, left, right }: Props) {
+export function DistributionChart({
+  label,
+  leftName,
+  rightName,
+  left,
+  right,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!ref.current || !left || !right) return;
     const chart = echarts.init(ref.current);
-    const kind = left.graph.kind === right.graph.kind ? left.graph.kind : 'continuous_density';
+    const kind =
+      left.graph.kind === right.graph.kind
+        ? left.graph.kind
+        : 'continuous_density';
     const seriesType = kind === 'threshold_gauge' ? 'bar' : 'line';
     chart.setOption({
       animation: false,
       grid: { left: 48, right: 20, top: 54, bottom: 44 },
       tooltip: { trigger: 'axis' },
       legend: { top: 4, data: [leftName, rightName] },
-      xAxis: { type: 'value', name: label, nameLocation: 'middle', nameGap: 30 },
+      xAxis: {
+        type: 'value',
+        name: label,
+        nameLocation: 'middle',
+        nameGap: 30,
+      },
       yAxis: {
         type: 'value',
         name: kind === 'threshold_gauge' ? 'P(≥ x)' : 'Probability',
-        axisLabel: { formatter: (value: number) => `${(value * 100).toFixed(0)}%` },
+        axisLabel: {
+          formatter: (value: number) => `${(value * 100).toFixed(0)}%`,
+        },
       },
       series: [
         {
