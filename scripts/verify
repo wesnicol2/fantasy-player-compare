@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-# This is the local pre-push gate and the CI verification command.
-# If this passes locally with the repo's dev dependencies installed, CI should
-# not discover a new Ruff, syntax, or unit-test failure.
 ruff check .
 ruff format --check .
-
 while IFS= read -r file; do
   python -m py_compile "$file"
 done < <(git ls-files '*.py')
-
 python -m pytest tests/ -q
+
+command -v npm >/dev/null 2>&1 || { echo "npm is required for frontend verification" >&2; exit 1; }
+if [[ ! -d frontend/node_modules ]]; then
+  npm --prefix frontend install --no-audit --no-fund
+fi
+npm --prefix frontend run check
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
