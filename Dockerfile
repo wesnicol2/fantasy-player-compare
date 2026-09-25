@@ -14,4 +14,4 @@ RUN mkdir -p data
 
 EXPOSE 8000
 
-CMD ["python", "-m", "app.api", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "fantasy_player_compare.api", "--host", "0.0.0.0", "--port", "8000"]

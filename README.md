@@ -1,4 +1,4 @@
-# python-service-template
+# fantasy-player-compare
 
 A containerized Python service. Describe what it does here — one or two
 sentences, from the outside in.
@@ -13,10 +13,10 @@ CI publishes the image to GHCR, so there's nothing to build:
 
 ```bash
 docker run -d \
-  --name python-service-template \
+  --name fantasy-player-compare \
   -p 8080:8000 \
-  -v /mnt/user/appdata/python-service-template/data:/srv/data \
-  ghcr.io/wesnicol2/python-service-template:latest
+  -v /mnt/user/appdata/fantasy-player-compare/data:/srv/data \
+  ghcr.io/wesnicol2/fantasy-player-compare:latest
 ```
 
 Then open `http://<host>:8080/health`. Or use the compose file, which mounts
@@ -47,7 +47,7 @@ keeping across restarts.
 
 ```bash
 pip install -r requirements.txt
-python -m app.api --host 0.0.0.0 --port 8000
+python -m fantasy_player_compare.api --host 0.0.0.0 --port 8000
 ```
 
 ## Test it
@@ -79,11 +79,11 @@ tests green.
 ## Endpoints
 
 `/health` — returns `{"status": "ok"}`. Everything else is yours to add; see
-`ROUTES` in `app/api.py`.
+`ROUTES` in `fantasy_player_compare/api.py`.
 
 ## Project structure
 
-- `app/` — the application. `api.py` is the entrypoint (the `Dockerfile`'s
+- `fantasy_player_compare/` — the application. `api.py` is the entrypoint (the `Dockerfile`'s
   `CMD`).
 - `tests/` — unit tests.
 - `scripts/` — repo-owned local fix and verification commands used by agents

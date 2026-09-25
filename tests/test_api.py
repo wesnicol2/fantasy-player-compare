@@ -2,7 +2,7 @@
 
 import json
 
-from app.api import application
+from fantasy_player_compare.api import application
 
 
 def call(path: str, method: str = "GET") -> tuple[int, dict]:
