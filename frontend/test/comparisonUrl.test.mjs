@@ -11,8 +11,14 @@ test('share URL preserves stable player IDs and scoring', () => {
   const left = { id: '123', name: 'A.J. Brown' };
   const right = { id: '456', name: 'Bijan Robinson' };
   const url = comparisonUrl(left, right, 'ppr');
-  assert.equal(url, '/compare/123-vs-456/a-j-brown-vs-bijan-robinson?scoring=ppr');
-  assert.deepEqual(parseSharedPath(url.split('?')[0]), { left: '123', right: '456' });
+  assert.equal(
+    url,
+    '/compare/123-vs-456/a-j-brown-vs-bijan-robinson?scoring=ppr',
+  );
+  assert.deepEqual(parseSharedPath(url.split('?')[0]), {
+    left: '123',
+    right: '456',
+  });
 });
 
 test('invalid share paths do not fabricate player IDs', () => {
