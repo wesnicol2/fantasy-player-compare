@@ -1,35 +1,70 @@
-"""Day-one test. Proves the pipeline runs something real, not an empty suite."""
+from __future__ import annotations
 
 import json
+from io import BytesIO
 
-from fantasy_player_compare.api import application
-
-
-def call(path: str, method: str = "GET") -> tuple[int, dict]:
-    """Drive the WSGI app directly -- no server, no socket."""
-    captured: dict[str, str] = {}
-
-    def start_response(status: str, headers: list[tuple[str, str]]) -> None:
-        captured["status"] = status
-        captured["headers"] = headers
-
-    body = b"".join(application({"PATH_INFO": path, "REQUEST_METHOD": method}, start_response))
-    code = int(captured["status"].split(" ", 1)[0])
-    return code, json.loads(body)
+from app import api
 
 
-def test_health_is_ok():
-    code, payload = call("/health")
-    assert code == 200
-    assert payload == {"status": "ok"}
+def request(path="/health", query="", method="GET"):
+    status = None
+    headers = None
+
+    def start_response(value, values):
+        nonlocal status, headers
+        status = value
+        headers = values
+
+    body = b"".join(
+        api.application(
+            {
+                "PATH_INFO": path,
+                "QUERY_STRING": query,
+                "REQUEST_METHOD": method,
+                "wsgi.input": BytesIO(),
+            },
+            start_response,
+        )
+    )
+    return status, dict(headers or []), body
 
 
-def test_unknown_path_is_404():
-    code, payload = call("/nope")
-    assert code == 404
-    assert payload["path"] == "/nope"
+def test_health_is_cheap_json():
+    status, headers, body = request()
+    assert status == "200 OK"
+    assert headers["Content-Type"].startswith("application/json")
+    assert json.loads(body) == {"status": "ok"}
 
 
-def test_write_methods_are_rejected():
-    code, _ = call("/health", method="POST")
-    assert code == 405
+def test_compare_requires_two_ids():
+    status, _, body = request("/api/compare", "left=1")
+    assert status == "400 Bad Request"
+    assert "required" in json.loads(body)["error"]
+
+
+def test_unknown_api_route_is_json_404():
+    status, _, body = request("/api/nope")
+    assert status == "404 Not Found"
+    assert json.loads(body)["error"] == "not found"
+
+
+def test_player_search_upstream_failure_is_controlled_503(monkeypatch):
+    def fail(_query):
+        raise api.ComparisonError("player directory is temporarily unavailable", 503)
+
+    monkeypatch.setattr(api, "search_players", fail)
+    status, _, body = request("/api/players", "q=alpha")
+    assert status == "503 Service Unavailable"
+    assert json.loads(body)["error"] == "player directory is temporarily unavailable"
+
+
+def test_compare_url_serves_spa_fallback(monkeypatch, tmp_path):
+    index = tmp_path / "index.html"
+    index.write_text("<!doctype html><title>Fantasy Player Compare</title>", encoding="utf-8")
+    monkeypatch.setattr(api, "UI_ROOT", tmp_path)
+
+    status, headers, body = request("/compare/1-vs-2/alpha-vs-beta")
+
+    assert status == "200 OK"
+    assert headers["Content-Type"].startswith("text/html")
+    assert b"Fantasy Player Compare" in body
