@@ -86,7 +86,6 @@ function ThresholdThermometer({
                       className={`threshold-marker threshold-marker-${player.key}`}
                       key={player.key}
                       style={{ top: `${(1 - probability) * 100}%` }}
-                      aria-label={`${player.name} ${formatThreshold(threshold)} or more: ${formatProbability(probability)}`}
                     >
                       <span
                         className="threshold-marker-line"
