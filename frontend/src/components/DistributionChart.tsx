@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import '../threshold-thermometer.css';
 import type { MarketDetail } from '../types';
 import { echarts } from '../visualization/echarts';
 
