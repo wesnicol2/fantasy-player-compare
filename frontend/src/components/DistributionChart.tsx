@@ -11,6 +11,14 @@ interface Props {
   right: MarketDetail | null;
 }
 
+interface ThresholdProps {
+  label: string;
+  leftName: string;
+  rightName: string;
+  left: MarketDetail;
+  right: MarketDetail;
+}
+
 function formatProbability(value: number) {
   const percent = Math.max(0, Math.min(1, value)) * 100;
   return `${percent < 10 ? percent.toFixed(1) : Math.round(percent)}%`;
@@ -26,7 +34,7 @@ function ThresholdThermometer({
   rightName,
   left,
   right,
-}: Required<Props>) {
+}: ThresholdProps) {
   const thresholds = [
     ...new Set([
       ...left.graph.points.map((point) => point.x),
