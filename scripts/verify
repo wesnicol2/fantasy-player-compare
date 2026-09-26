@@ -13,4 +13,5 @@ if [[ ! -d frontend/node_modules ]]; then
 fi
 npm --prefix frontend run check
 npm --prefix frontend run typecheck
+npm --prefix frontend run test:url
 npm --prefix frontend run build

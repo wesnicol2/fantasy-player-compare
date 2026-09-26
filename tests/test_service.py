@@ -110,6 +110,47 @@ class FakePlanner:
         return {"this": {"g1": game}, "next": {}}
 
 
+class FakePlannerDifferentGames(FakePlanner):
+    @staticmethod
+    def plan_relevant_games_and_markets(
+        roster,
+        windows,
+        regions="us",
+        cache_mode="auto",
+        events=None,
+    ):
+        raw_players = list(roster["players"].values())
+        alpha = raw_players[0]
+        beta = raw_players[1]
+        game_one = FakeGame(
+            "g1",
+            "Arizona Cardinals",
+            "Carolina Panthers",
+            "2026-09-27T17:00:00Z",
+            [
+                {
+                    "alias": alpha["name"]["full"],
+                    "primary_position": alpha["primary_position"],
+                }
+            ],
+            ["player_reception_yds", "player_anytime_td"],
+        )
+        game_two = FakeGame(
+            "g2",
+            "Atlanta Falcons",
+            "Chicago Bears",
+            "2026-09-27T20:00:00Z",
+            [
+                {
+                    "alias": beta["name"]["full"],
+                    "primary_position": beta["primary_position"],
+                }
+            ],
+            ["player_rush_yds", "player_anytime_td"],
+        )
+        return {"this": {"g1": game_one, "g2": game_two}, "next": {}}
+
+
 class FakeAggregator:
     @staticmethod
     def aggregate_by_week(event_payloads, planned):
@@ -219,6 +260,15 @@ def test_same_game_fetches_event_once_and_serializes_matchup():
     assert payload["right"]["projection"]["mid"] == 11.0
     assert payload["left"]["matchup"]["team_implied_total"] == 25.0
     assert payload["right"]["matchup"]["team_implied_total"] == 23.0
+
+
+def test_different_games_fetch_each_game_once():
+    vendor = fake_vendor()
+    vendor.planner = FakePlannerDifferentGames()
+    payload = service.compare_players("1", "2", vendor=vendor)
+    assert vendor.odds_client.event_calls == 2
+    assert payload["left"]["player"]["id"] == "1"
+    assert payload["right"]["player"]["id"] == "2"
 
 
 def test_provider_failure_uses_cached_event_and_marks_stale():

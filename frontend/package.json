@@ -11,6 +11,7 @@
     "check": "biome check .",
     "fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
+    "test:url": "rm -rf .tmp-test && tsc --ignoreConfig src/comparisonUrl.ts --outDir .tmp-test --module ESNext --moduleResolution Bundler --target ES2022 --skipLibCheck && node --test test/comparisonUrl.test.mjs && rm -rf .tmp-test",
     "build": "vite build"
   },
   "dependencies": {
