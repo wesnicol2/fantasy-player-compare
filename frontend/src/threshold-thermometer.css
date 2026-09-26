@@ -80,9 +80,24 @@
   border: 1px solid var(--border);
   border-radius: 999px 999px 6px 6px;
   background:
-    linear-gradient(to bottom, transparent 24.5%, #292e38 25%, transparent 25.5%),
-    linear-gradient(to bottom, transparent 49.5%, #292e38 50%, transparent 50.5%),
-    linear-gradient(to bottom, transparent 74.5%, #292e38 75%, transparent 75.5%),
+    linear-gradient(
+      to bottom,
+      transparent 24.5%,
+      #292e38 25%,
+      transparent 25.5%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 49.5%,
+      #292e38 50%,
+      transparent 50.5%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 74.5%,
+      #292e38 75%,
+      transparent 75.5%
+    ),
     #11141b;
 }
 
