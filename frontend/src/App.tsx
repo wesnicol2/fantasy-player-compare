@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { comparePlayers } from './api/client';
-import { ComparisonView } from './components/ComparisonView';
-import { PlayerSearch } from './components/PlayerSearch';
 import {
   comparisonUrl,
   parseSharedPath,
   scoringFromSearch,
 } from './comparisonUrl';
+import { ComparisonView } from './components/ComparisonView';
+import { PlayerSearch } from './components/PlayerSearch';
 import type { ComparisonResponse, PlayerOption, ScoringPreset } from './types';
 
 const SCORING: Array<{ value: ScoringPreset; label: string }> = [
@@ -16,10 +16,7 @@ const SCORING: Array<{ value: ScoringPreset; label: string }> = [
 ];
 
 export function App() {
-  const shared = useMemo(
-    () => parseSharedPath(window.location.pathname),
-    [],
-  );
+  const shared = useMemo(() => parseSharedPath(window.location.pathname), []);
   const [left, setLeft] = useState<PlayerOption | null>(null);
   const [right, setRight] = useState<PlayerOption | null>(null);
   const [scoring, setScoring] = useState<ScoringPreset>(() =>
