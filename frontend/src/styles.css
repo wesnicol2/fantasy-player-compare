@@ -165,7 +165,7 @@ main {
 .search-results button.active {
   background: var(--surface-2);
 }
-.search-results button span {
+.player-meta {
   color: var(--muted);
   font-size: 0.78rem;
   white-space: nowrap;
