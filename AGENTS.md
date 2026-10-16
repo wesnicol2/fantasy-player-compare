@@ -1,116 +1,89 @@
 # AGENTS.md — why this repo is shaped the way it is
 
-The deep document. `README.md` covers how to use the app and `CONTRIBUTING.md`
-covers process; this file holds the reasoning behind the code — the design
-decisions, the constraints they answer to, and the things that were tried and
-rejected. There is no length limit here. If you are about to write a paragraph
-of rationale in a code comment or in the README, it probably belongs here.
+`README.md` explains how to use and run the app. `CONTRIBUTING.md` owns the development/deployment process. `docs/mvp.md` is the product contract. This file records the architectural reasoning a future maintainer or agent should not have to re-derive.
 
 ## Which docs an agent may change
 
-The documents in this repo are not equally open to edit. An assistant working
-here should treat them as two tiers.
+Keep `README.md` and `AGENTS.md` current with implementation changes. Do not change `CONTRIBUTING.md` or `docs/*.md` without explicit human approval: those are contracts the implementation is measured against.
 
-**Keep current as you go — `README.md` and `AGENTS.md`.** If a change you make
-contradicts something either file says, update it in the same commit. A change
-that alters how someone runs or uses the app belongs in the README; a change
-that alters why the code is shaped the way it is belongs here. This is not
-optional tidying: a doc that describes an app that no longer exists is exactly
-how a repo rots, and the next reader has no way to tell that a stale sentence is
-stale. Do not leave it for a follow-up.
+## Local verification contract
 
-**Do not touch without explicit human approval — `CONTRIBUTING.md` and
-`docs/*.md`.** These are the contracts. One defines how work moves through the
-repo, the others define what the system is supposed to do; the rest of the repo
-is measured against them, so an agent editing them unasked is an agent quietly
-moving the goalposts it is being judged by. Ask first and get a clear yes, every
-time. This holds on a `dev/` branch as much as anywhere else — being unmerged is
-not permission, because review is precisely where an unrequested change to a
-contract is easiest to wave through. If work seems to require changing one of
-them, say so, propose the specific edit and wait.
-
-The asymmetry is deliberate. Getting a stale README fixed is cheap and the
-downside of not fixing it is real; changing a contract is cheap to do and
-expensive to notice.
-
-## Local fix and verification contract
-
-Agents are expected to have a local shell/runtime, but they do not need access
-to a deployed Test environment to produce lint-clean, formatted, unit-tested
-code.
-
-After editing Python, run:
+After editing code, run:
 
 ```bash
 bash scripts/fix
-```
-
-Do not manually predict Ruff's formatting. The repository pins Ruff and the
-script applies its safe lint fixes followed by its formatter. If an issue cannot
-be auto-fixed, `bash scripts/verify` will report it for an explicit code change.
-
-Before every push, run:
-
-```bash
 bash scripts/verify
 ```
 
-This is a hard pre-push gate. It runs Ruff linting, Ruff's format check, syntax
-compilation of tracked Python files, and pytest. CI invokes this exact same
-script. CI is confirmation of local verification, not the first environment in
-which an agent should discover formatting, lint, syntax, or unit-test failures.
-
-A deployed Test environment has a different job: integration verification after
-a `dev/*` branch is promoted to `feature/*`. Use Test for behavior that depends
-on containers, networking, credentials, upstream services, persistent data, or
-other runtime conditions that local unit tests do not reproduce.
-
----
+`verify` is the exact local/CI gate: Ruff lint/format, tracked-Python compilation, pytest, Biome, strict TypeScript, pure share-URL tests, and a production Vite build. A deployed Test session is still required for behavior that depends on real credentials, upstream services, networking, containers, and the server's Watchtower deployment.
 
 ## The core idea
 
-<!-- What this project is for, in a paragraph. The thing you would say out loud
-     to explain why it exists. Replace this comment. -->
+Fantasy Player Compare is deliberately one public decision surface, not a smaller copy of `odds-fantasy`: select two current offensive players and inspect what sportsbook markets imply about this week's fantasy output. A first-time visitor should get useful evidence without an account, league ID, roster import, or configuration workflow.
+
+The public differentiator is the evidence model. The app exposes the weekly market-derived projection range, game environment, per-stat fantasy contribution, stat-value ranges, and probability distributions rather than adding generic rankings, consensus expert votes, ADP, or rest-of-season material.
 
 ## Architecture decisions
 
-<!-- One subsection per decision that a reader would otherwise second-guess.
-     Say what the alternative was and why it lost. -->
+### Reuse the canonical projection engine; do not fork the math
+
+`requirements.txt` pins `odds-fantasy` to an exact GitHub commit. `app/vendor.py` lazily bridges to its aggregator, market reconstruction, projection, graph-data, planner, Sleeper metadata, and weekly-window modules. This keeps one canonical implementation of the sportsbook reconstruction and missing-market semantics.
+
+Do not copy those modules into this repo just to make them easier to edit. If the shared model needs a mathematical correction, fix and verify it in `odds-fantasy`, then deliberately advance the pinned commit here.
+
+### Sleeper is identity metadata, not onboarding
+
+Sleeper's public all-NFL-players endpoint supplies stable player IDs, full names, team abbreviations, and positions. There is no user/league/roster connection in this product. Search filters to current QB/RB/WR/TE players with a current team.
+
+The upstream all-players response is expensive but stable, so the vendor client caches it for 24 hours. Do not turn search keystrokes into direct Sleeper calls.
+
+### Scoring is three public presets
+
+MVP scoring is Standard, Half-PPR, or PPR. `app/scoring.py` converts those presets into the same scoring-settings shape consumed by the shared projection engine. Custom league scoring is intentionally not part of the no-account MVP.
+
+Changing the scoring preset must re-score cached sportsbook evidence; it must not create a different provider-data pipeline.
+
+### Provider calls are game-shaped, not player-shaped
+
+The Odds API player-prop endpoint is event-based. `app/service.py` therefore plans the two selected players together, takes the union of markets required for every selected player in each game, and fetches each game once. Two players in the same game share one cold event call; players in different games use one cold call per game.
+
+Per-event locks coalesce identical concurrent misses. The stdlib server is threaded so this protection is meaningful under concurrent public traffic. On refresh failure, cached event evidence can be served with `stale=true`; no cached data means a controlled unavailable response, never a fabricated zero projection.
+
+### Missing evidence remains unknown
+
+The shared projection engine defines position-specific core markets. If a core market cannot be modeled, overall Floor/Median/Ceiling/Mean is withheld, `coverage.status` is partial/missing, and the missing markets are returned explicitly. Successfully modeled individual market evidence may still be shown.
+
+Never replace a missing market or projection with `0`. Zero is a valid numeric football outcome; unknown is a data-quality state.
+
+### One container, one page
+
+React 19 + TypeScript owns the browser interaction. Vite builds it, ECharts renders only the probability drill-down, and ordinary CSS/semantic HTML handle everything else. There is no Zustand because the current app has only one coordinated page and local React state is sufficient.
+
+The Python stdlib WSGI app serves both `/api/*` and the compiled frontend. Unknown non-API paths fall back to `index.html`, which is required for shareable `/compare/*` URLs. The URL carries stable Sleeper player IDs plus the scoring preset; slugs are descriptive only.
+
+### Browser code presents; Python/model code decides
+
+The browser may format numbers, compare displayed values for cell emphasis, map supplied percentiles onto a thermometer, and render backend graph points. It must not fit sportsbook lines, invent a projection, or independently reconstruct a stat distribution.
+
+A stat-row click changes the displayed distribution. It does not trigger an alternate model.
 
 ## Deployment shape
 
-Two environments — Test (`:test`) and Production (`:latest`) — each pinned to its
-own GHCR tag, with Watchtower on the home server polling and recreating
-containers. CI never reaches into the server. The full model is in
-`CONTRIBUTING.md`; the reasoning for it is just that a pull-based deploy needs no
-inbound access to a home network and no credentials stored in GitHub beyond what
-the Actions token already provides.
+The template's promotion contract remains unchanged:
 
-There is deliberately no per-`dev/*` environment. One shared tag across every dev
-branch means concurrent branches clobber each other's deploy, which makes the
-environment untrustworthy exactly when more than one thing is in flight. Dev
-branches still get full CI; they just don't deploy. Verification against a
-running app happens on Test.
+- `dev/*` — CI only, no image publish.
+- `feature/*` — publishes `ghcr.io/wesnicol2/fantasy-player-compare:test` for the shared Test container.
+- `main` — publishes `:latest` for Production.
 
-Registry auth uses the built-in `GITHUB_TOKEN` rather than a personal access
-token. A PAT would let one credential own packages across every repo, but it has
-to be added by hand before the first push to `main` can succeed — which is one
-more thing standing between a new repo and green CI. The tradeoff is that the
-published package is private to the repo by default, so the server needs its own
-pull credential; it needed one anyway.
-
-## Repo history worth not relearning
-
-<!-- Things that were tried and abandoned, and dead ends someone will otherwise
-     walk into a second time. Write these down when they happen, not later. -->
+CI never reaches into the server. Watchtower pulls the moving tags. The Docker image exposes internal port 8000 and includes a cheap `/health` check.
 
 ## Things deliberately not done
 
-- **No mypy, no ESLint.** Ruff only. See `CONTRIBUTING.md`.
-- **No web framework in the starting skeleton.** `app/api.py` is a stdlib WSGI
-  app so the template ships with zero runtime dependencies and the Docker layer
-  cache stays trivial. Add one the moment you actually need routing, validation
-  or async — this is a starting point, not a position.
-
-<!-- Add your own. This section is most useful when it records the obvious
-     thing you chose not to build, and why. -->
+- No account, login, user profile, saved comparisons, or personalized roster.
+- No league import or custom scoring in MVP.
+- No generic rankings, waiver tooling, ROS projections, ADP/draft stats, defenses, or kickers.
+- No injury/news/weather aggregation.
+- No advertisement code yet. The product should first prove that the two-player tool is useful and attracts traffic.
+- No duplicated `odds-fantasy` projection engine.
+- No frontend state framework while local React state remains sufficient.
+- No server-side recommendation sentence beyond describing the displayed numeric comparison; the evidence is the product.

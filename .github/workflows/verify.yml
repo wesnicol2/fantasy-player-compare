@@ -19,11 +19,15 @@ jobs:
             requirements.txt
             pyproject.toml
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
           pip install -e ".[dev]"
 
-      # Exact same gate agents are required to run before pushing.
-      - name: Verify
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Verify repository
         run: bash scripts/verify
